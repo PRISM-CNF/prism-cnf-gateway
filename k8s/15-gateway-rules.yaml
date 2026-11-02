@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nse-ovs-gateway-rules
+  namespace: nse-ovs-gateway
+data:
+  rules.yaml: |
+    mode: allowlist
+    rules:
+      - name: client-server
+        left_cidrs:
+          - 172.16.1.100/31
+        right_cidrs:
+          - 172.16.1.100/31

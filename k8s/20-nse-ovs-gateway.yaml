@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nse-ovs-gateway
+  namespace: nse-ovs-gateway
+  labels:
+    app: nse-ovs-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nse-ovs-gateway
+  template:
+    metadata:
+      labels:
+        app: nse-ovs-gateway
+        "spiffe.io/spiffe-id": "true"
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: node01
+      containers:
+        - name: nse
+          image: zihaocnic/nse-ovs-gateway:20260329-ab198b7
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          env:
+            - name: SPIFFE_ENDPOINT_SOCKET
+              value: unix:///run/spire/sockets/agent.sock
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NSM_NAME
+              value: "$(POD_NAME)"
+            - name: NSM_SERVICE_NAME
+              value: nse-ovs-gateway
+            - name: NSM_LABELS
+              value: "app:gateway"
+            - name: NSM_GATEWAY_RULES_PATH
+              value: /etc/nse-gateway/rules.yaml
+            - name: NSM_LOG_LEVEL
+              value: TRACE
+            - name: NSM_CONNECT_TO
+              value: unix:///var/lib/networkservicemesh/nsm.io.sock
+          volumeMounts:
+            - name: spire-agent-socket
+              mountPath: /run/spire/sockets
+              readOnly: true
+            - name: nsm-socket
+              mountPath: /var/lib/networkservicemesh
+              readOnly: true
+            - name: gateway-rules
+              mountPath: /etc/nse-gateway
+              readOnly: true
+      volumes:
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
+        - name: nsm-socket
+          hostPath:
+            path: /var/lib/networkservicemesh
+            type: DirectoryOrCreate
+        - name: gateway-rules
+          configMap:
+            name: nse-ovs-gateway-rules
+            items:
+              - key: rules.yaml
+                path: rules.yaml

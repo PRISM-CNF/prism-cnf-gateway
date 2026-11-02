@@ -1,0 +1,16 @@
+apiVersion: networkservicemesh.io/v1
+kind: NetworkService
+metadata:
+  name: nse-ovs-gateway
+  namespace: nse-ovs-gateway
+spec:
+  payload: ETHERNET
+  matches:
+    - source_selector:
+        app: gateway
+      routes:
+        - destination_selector:
+            app: server
+    - routes:
+        - destination_selector:
+            app: gateway
